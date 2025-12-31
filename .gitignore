@@ -1,9 +1,0 @@
-node_modules
-npm-debug.log*
-dist
-!svg-only/dist
-build
-.env
-.wrangler
-.dev.vars
-.DS_Store
