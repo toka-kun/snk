@@ -1,4 +1,4 @@
-# snk を使って GitHub プロフィールに Snake（動く SVG）を表示する方法
+# snkを使ってGitHubプロフィールにSnakeを表示する方法
 
 このリポジトリは、**GitHub のコントリビューショングリッドを使った Snake（platane/snk）をプロフィール README に表示する手順**を分かりやすくまとめたサンプルです。以下の内容はそのままコピペして使えるように作っています。
 
@@ -163,8 +163,6 @@ your-username/your-username
 ## 参考
 
 * snk (Platane): [https://github.com/Platane/snk](https://github.com/Platane/snk)
-* GitHub Actions docs: [https://docs.github.com/actions](https://docs.github.com/actions)
-* Raw file URL: [https://raw.githubusercontent.com](https://raw.githubusercontent.com)
 
 ---
 
