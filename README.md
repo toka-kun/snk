@@ -171,7 +171,3 @@ your-username/your-username
 このドキュメントは MIT ライクに自由に使って構いません。必要に応じて内容をあなたのリポジトリに合わせて編集してください。
 
 ---
-
-### 補足（作者向けメモ）
-
-* README の `your-username` を置き換える手間を減らすため、README 中に `find/replace` の説明を入れても親切です。
