@@ -1,104 +1,179 @@
-# snk
+# snk を使って GitHub プロフィールに Snake（動く SVG）を表示する方法
 
-[![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/platane/platane/main.yml?label=action&style=flat-square)](https://github.com/Platane/Platane/actions/workflows/main.yml)
-[![GitHub release](https://img.shields.io/github/release/platane/snk.svg?style=flat-square)](https://github.com/platane/snk/releases/latest)
-[![GitHub marketplace](https://img.shields.io/badge/marketplace-snake-blue?logo=github&style=flat-square)](https://github.com/marketplace/actions/generate-snake-game-from-github-contribution-grid)
-![type definitions](https://img.shields.io/npm/types/typescript?style=flat-square)
-![code style](https://img.shields.io/badge/code_style-prettier-ff69b4.svg?style=flat-square)
+このリポジトリは、**GitHub のコントリビューショングリッドを使った Snake（platane/snk）をプロフィール README に表示する手順**を分かりやすくまとめたサンプルです。以下の内容はそのままコピペして使えるように作っています。
 
-Generates a snake game from a github user contributions graph
+---
 
-<picture>
-  <source
-    media="(prefers-color-scheme: dark)"
-    srcset="https://raw.githubusercontent.com/platane/snk/output/github-contribution-grid-snake-dark.svg"
-  />
-  <source
-    media="(prefers-color-scheme: light)"
-    srcset="https://raw.githubusercontent.com/platane/snk/output/github-contribution-grid-snake.svg"
-  />
-  <img
-    alt="github contribution grid snake animation"
-    src="https://raw.githubusercontent.com/platane/snk/output/github-contribution-grid-snake.svg"
-  />
-</picture>
+## 概要
 
-Pull a github user's contribution graph.
-Make it a snake Game, generate a snake path where the cells get eaten in an orderly fashion.
+* `Platane/snk` GitHub Action を使って、毎日（または手動）で `github-snake.svg` を自動生成します。
+* 生成した SVG は `output` ブランチ（この例）に push され、README から `raw.githubusercontent.com` 経由で参照します。
 
-Generate a [gif](https://github.com/Platane/snk/raw/output/github-contribution-grid-snake.gif) or [svg](https://github.com/Platane/snk/raw/output/github-contribution-grid-snake.svg) image. Colors can [be](https://raw.githubusercontent.com/platane/snk/output/github-contribution-grid-snake-ocean.svg) [customized](https://raw.githubusercontent.com/platane/snk/output/github-contribution-grid-snake-grey.svg).
+---
 
-Available as github action. It can automatically generate a new image each day. Which makes for great [github profile readme](https://docs.github.com/en/free-pro-team@latest/github/setting-up-and-managing-your-github-profile/managing-your-profile-readme)
+## 前提
 
-## Usage
+* GitHub アカウントがあること
+* プロフィール用リポジトリ（**ユーザー名と同じリポジトリ名**）を作ること（例: `your-username/your-username`）
+* Actions が使える（通常は有効）
 
-### **github action**
+> このリポジトリ（ドキュメント）は教えるためのサンプルです。実際に手を動かすときは `your-username` をあなたの GitHub ユーザー名（例: `toka-kun`）に置き換えてください。
+
+---
+
+## 全体の手順（サマリ）
+
+1. GitHub にプロフィール用リポジトリを作成（名前はユーザー名と一致）
+2. リポジトリに `.github/workflows/generate-snake.yml` を追加
+3. README.md に SVG を埋め込む HTML を追加
+4. Actions を実行して `output` ブランチを生成（初回は手動実行がおすすめ）
+
+---
+
+## ファイル：`.github/workflows/generate-snake.yml`
+
+このワークフローをそのまま `.github/workflows/generate-snake.yml` に貼り付けてください。
 
 ```yaml
-- uses: Platane/snk@v3
-  with:
-    # github user name to read the contribution graph from (**required**)
-    # using action context var `github.repository_owner` or specified user
-    github_user_name: ${{ github.repository_owner }}
+name: Generate Snake
 
-    # list of files to generate.
-    # one file per line. Each output can be customized with options as query string.
-    #
-    #  supported options:
-    #  - palette:           A preset of color, one of [github, github-dark, github-light]
-    #  - color_snake:       Color of the snake
-    #  - color_dots:        Coma separated list of dots color.
-    #                       The first one is 0 contribution, then it goes from the low contribution to the highest.
-    #                       Exactly 5 colors are expected.
-    #  - color_background:  Color of the background (for gif only)
-    outputs: |
-      dist/github-snake.svg
-      dist/github-snake-dark.svg?palette=github-dark
-      dist/ocean.gif?color_snake=orange&color_dots=#bfd6f6,#8dbdff,#64a1f4,#4b91f1,#3c7dd9&color_background=#aaaaaa
+on:
+  schedule:
+    - cron: '0 0 * * *'   # 毎日 00:00 UTC に実行（必要に応じて変更）
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate snake SVGs
+        uses: Platane/snk@v3
+        with:
+          # ここをあなたの GitHub ユーザー名に置き換える
+          github_user_name: your-username
+          outputs: |
+            dist/github-snake.svg
+            dist/github-snake-dark.svg?palette=github-dark
+          # github_token は自動で渡されるので指定は不要
+
+      - name: Push snake to output branch
+        uses: crazy-max/ghaction-github-pages@v4
+        with:
+          target_branch: output
+          build_dir: dist
+          allow_empty_commit: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
 
-[example with cron job](https://github.com/Platane/Platane/blob/master/.github/workflows/main.yml#L26-L33)
+**ポイント**
 
-### **svg**
+* `permissions: contents: write` を必ず追加してください（これがないと `git push` が 403 になります）。
+* `your-username` を自分のユーザー名に置き換えるのを忘れないでください。
 
-If you are only interested in generating a svg (not a gif), consider using this faster action: `uses: Platane/snk/svg-only@v3`
+---
 
-### **dark mode**
+## ファイル：`README.md` に貼るコード（そのまま）
 
-![dark mode](https://github.com/user-attachments/assets/6b900b64-0cdc-43f0-a234-e11dba8e786e)
-
-For **dark mode** support on github, use this [special syntax](https://docs.github.com/en/get-started/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax#specifying-the-theme-an-image-is-shown-to) in your readme.
+以下を README の表示したい場所に貼ってください（`your-username` を置き換え）。
 
 ```html
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="github-snake-dark.svg" />
-  <source media="(prefers-color-scheme: light)" srcset="github-snake.svg" />
-  <img alt="github-snake" src="github-snake.svg" />
+  <source media="(prefers-color-scheme: dark)"
+          srcset="https://raw.githubusercontent.com/your-username/your-username/output/github-snake-dark.svg" />
+  <source media="(prefers-color-scheme: light)"
+          srcset="https://raw.githubusercontent.com/your-username/your-username/output/github-snake.svg" />
+  <img alt="github-snake"
+       src="https://raw.githubusercontent.com/your-username/your-username/output/github-snake.svg" />
 </picture>
 ```
 
-### **interactive demo**
+---
 
-<a href="https://platane.github.io/snk">
-  <img height="300px" src="https://user-images.githubusercontent.com/1659820/121798244-7c86d700-cc25-11eb-8c1c-b8e65556ac0d.gif" ></img>
-</a>
+## 初回実行（確認手順）
 
-[platane.github.io/snk](https://platane.github.io/snk)
+1. ファイルをコミットして GitHub に push
+2. リポジトリの `Actions` → `Generate Snake` → `Run workflow` をクリック
+3. Workflow が完了すると `output` ブランチが作成され、`github-snake.svg` が生成されます
+4. README を開いて画像が表示されることを確認
 
-### **local**
+---
 
-```sh
-npm install
+## カスタマイズ例
 
-npm run dev:demo
+### 色を変える
+
+`outputs` のオプションで snake やドット（草）の色、パレットを指定できます。例：
+
+```
+outputs: |
+  dist/github-snake.svg?color_snake=orange&color_dots=#bfd6f6,#8dbdff,#64a1f4,#4b91f1,#3c7dd9&color_background=#aaaaaa
 ```
 
-## Implementation
+### SVG のみ生成したい
 
-[solver algorithm](./packages/solver/README.md)
+GIF を生成しない（高速化）したい場合は `Platane/snk/svg-only@v3` を利用できます。
 
-## Contribution Policy
+---
 
-This project does not accept pull request.
+## トラブルシューティング
 
-Reporting or fixing issues is appreciated, but change in the API or implementation should be discussed in issue first and is likely not going be greenlighted.
+* **403: Permission denied**
+
+  * ワークフローに `permissions: contents: write` を追加してください。
+
+* **output ブランチが作成されない / 画像がない**
+
+  * Actions の実行ログを確認。`Platane/snk` ステップで `writing to dist/github-snake.svg` のログがあるかどうか確認。
+  * `Push snake to output branch` ステップで `git push` に失敗していないか確認（403 が出る場合は権限不足）。
+
+* **README に画像が表示されない**
+
+  * `raw.githubusercontent.com/ユーザー名/リポジトリ名/output/github-snake.svg` の URL をブラウザで直接開き、SVG が取得できるか確認。
+
+---
+
+## FAQ
+
+* **snk を fork する必要はある？**
+
+  * いいえ。`Platane/snk@v3` は Actions として直接使えます。fork は不要。
+
+* **生成物は main ブランチに入る？**
+
+  * いいえ。ワークフロー内で生成され `output` ブランチなどに push されます（ワークフロー次第）。main にコミットする必要はありません。
+
+---
+
+## サンプルファイル構成
+
+```
+your-username/your-username
+├─ .github/
+│  └─ workflows/
+│     └─ generate-snake.yml
+└─ README.md   <-- ここに picture タグを貼る
+```
+
+---
+
+## 参考
+
+* snk (Platane): [https://github.com/Platane/snk](https://github.com/Platane/snk)
+* GitHub Actions docs: [https://docs.github.com/actions](https://docs.github.com/actions)
+* Raw file URL: [https://raw.githubusercontent.com](https://raw.githubusercontent.com)
+
+---
+
+## ライセンス
+
+このドキュメントは MIT ライクに自由に使って構いません。必要に応じて内容をあなたのリポジトリに合わせて編集してください。
+
+---
+
+### 補足（作者向けメモ）
+
+* README の `your-username` を置き換える手間を減らすため、README 中に `find/replace` の説明を入れても親切です。
